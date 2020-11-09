@@ -3,10 +3,12 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A3B063825597953004D1070 /* CodeScanner in Frameworks */ = {isa = PBXBuildFile; productRef = 0A3B063725597953004D1070 /* CodeScanner */; };
+		0A3B063B25597C39004D1070 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3B063A25597C39004D1070 /* WebView.swift */; };
 		0A7F34452553CAE600DAF917 /* Food_AbleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7F34442553CAE600DAF917 /* Food_AbleApp.swift */; };
 		0A7F34472553CAE600DAF917 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7F34462553CAE600DAF917 /* ContentView.swift */; };
 		0A7F34492553CAE700DAF917 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A7F34482553CAE700DAF917 /* Assets.xcassets */; };
@@ -16,6 +18,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0A3B063A25597C39004D1070 /* WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
 		0A7F34412553CAE600DAF917 /* Food-Able.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Food-Able.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A7F34442553CAE600DAF917 /* Food_AbleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Food_AbleApp.swift; sourceTree = "<group>"; };
 		0A7F34462553CAE600DAF917 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -33,6 +36,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A3B063825597953004D1070 /* CodeScanner in Frameworks */,
 				58B9AF25DAC283904A3B006D /* Pods_Food_Able.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -63,6 +67,7 @@
 			children = (
 				0A7F34442553CAE600DAF917 /* Food_AbleApp.swift */,
 				0A7F34462553CAE600DAF917 /* ContentView.swift */,
+				0A3B063A25597C39004D1070 /* WebView.swift */,
 				0A7F34542553E7AD00DAF917 /* CommonView.swift */,
 				0A7F34482553CAE700DAF917 /* Assets.xcassets */,
 				0A7F344D2553CAE700DAF917 /* Info.plist */,
@@ -85,7 +90,6 @@
 				65DE5474CBC4BE9C391F9FE0 /* Pods-Food-Able.debug.xcconfig */,
 				64189FDB385EFE1DA01DB142 /* Pods-Food-Able.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -115,6 +119,9 @@
 			dependencies = (
 			);
 			name = "Food-Able";
+			packageProductDependencies = (
+				0A3B063725597953004D1070 /* CodeScanner */,
+			);
 			productName = "Food-Able";
 			productReference = 0A7F34412553CAE600DAF917 /* Food-Able.app */;
 			productType = "com.apple.product-type.application";
@@ -142,6 +149,9 @@
 				Base,
 			);
 			mainGroup = 0A7F34382553CAE600DAF917;
+			packageReferences = (
+				0A3B063625597953004D1070 /* XCRemoteSwiftPackageReference "CodeScanner" */,
+			);
 			productRefGroup = 0A7F34422553CAE600DAF917 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -211,6 +221,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A7F34472553CAE600DAF917 /* ContentView.swift in Sources */,
+				0A3B063B25597C39004D1070 /* WebView.swift in Sources */,
 				0A7F34452553CAE600DAF917 /* Food_AbleApp.swift in Sources */,
 				0A7F34552553E7AD00DAF917 /* CommonView.swift in Sources */,
 			);
@@ -403,6 +414,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0A3B063625597953004D1070 /* XCRemoteSwiftPackageReference "CodeScanner" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/twostraws/CodeScanner";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0A3B063725597953004D1070 /* CodeScanner */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0A3B063625597953004D1070 /* XCRemoteSwiftPackageReference "CodeScanner" */;
+			productName = CodeScanner;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0A7F34392553CAE600DAF917 /* Project object */;
 }

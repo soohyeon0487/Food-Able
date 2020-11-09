@@ -6,60 +6,297 @@
 //
 
 import SwiftUI
+import CodeScanner
 import SDWebImageSwiftUI
 
+/// 최상위 뷰
 struct ContentView: View {
+	
+	// 현재 화면 메뉴 번호
+	@State var selectedMenuIndex: Int = 2
+	
+	// 학교 선택
+	let univList = ["Konkuk Univ.", "Chung-Ang Univ.", "Kyung Hee Univ."]
+	@State var selectedUnivIndex = 0
+	@State var univPickerOffset: CGFloat = UIScreen.main.bounds.size.height
+	
+	// QR 코드 관련 변수
+	@State var isShowingScanner: Bool = false
+	@State var isShowingWebView: Bool = false
+	@State var dataFromQRCode: String = ""
 	
 	var body: some View {
 		NavigationView {
-			HomeView()
-				.navigationBarTitle("", displayMode: .inline)
-				.navigationBarHidden(true)
+			ZStack {
+				
+				Text("\(self.selectedMenuIndex)")
+					.opacity(self.selectedMenuIndex == 0 ? 1 : 0)
+				
+				Text("\(self.selectedMenuIndex)")
+					.opacity(self.selectedMenuIndex == 1 ? 1 : 0)
+				
+				HomeView(univNameList: self.univList, selectedUnivIndex: self.$selectedUnivIndex, univPickerOffset: self.$univPickerOffset)
+					.foregroundColor(.black)
+					.opacity(self.selectedMenuIndex == 2 ? 1 : 0)
+				
+				Text("\(self.selectedMenuIndex)")
+					.opacity(self.selectedMenuIndex == 3 ? 1 : 0)
+				
+				// Bottom Bar
+				VStack(spacing: 0) {
+					
+					Spacer()
+					
+					ZStack(alignment: .bottom){
+						
+						// 하단 메뉴바
+						BottomBar(selectedMenuIndex: self.$selectedMenuIndex)
+							.padding()
+							.padding(.horizontal, 22)
+							.frame(height: 50)
+							.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+							.background(Color.white.shadow(radius: 5))
+						
+						// QR Camera
+						HStack {
+							
+							Spacer()
+							
+							NavigationLink(
+								destination:
+									// 현재는 웹뷰 -> 차후 앱 내 링크로 연결
+									MyWebview(urlToLoad: self.dataFromQRCode)
+									.edgesIgnoringSafeArea(.all)
+									.navigationBarTitle(self.dataFromQRCode, displayMode: .inline)
+								,
+								isActive: self.$isShowingWebView,
+								label: {
+									Button(action: {
+										self.isShowingScanner = true
+									}, label: {
+										Image(systemName: "qrcode")
+											.font(.title)
+											.foregroundColor(.white)
+											.padding(10)
+									})
+									.background(Color("MainColor"))
+									.clipShape(Circle())
+									.shadow(radius: 5)
+									.sheet(isPresented: self.$isShowingScanner) {
+										CodeScannerView(codeTypes: [.qr], simulatedData: "https://www.naver.com", completion: self.handleScan)
+									}
+								})
+									.padding()
+									.padding(.bottom, 50)
+						}
+						
+					}
+				}
+				
+				// 대학 고르기
+				UnivPickerView(univList: self.univList, selectedUnivIndex: self.$selectedUnivIndex, univPickerOffset: self.$univPickerOffset)
+					.offset(y:self.univPickerOffset)
+			}
+			.foregroundColor(.black)
+			.background(Color.white)
+			.navigationBarTitle("", displayMode: .inline)
+			.navigationBarHidden(true)
+		}
+	}
+	
+	// QR 코드 관련 이벤트 처리
+	func handleScan(result: Result<String, CodeScannerView.ScanError>) {
+		self.isShowingScanner = false
+		
+		switch result {
+		case .success(let code):
+			print("Scanning success")
+			print("\(code)")
+			self.dataFromQRCode = code
+			self.isShowingWebView = true
+			
+		case .failure(let error):
+			print("Scanning failure")
+			print("\(error)")
 		}
 	}
 }
 
-struct HomeView : View {
+struct BottomBar : View {
 	
-	@State var selected = 0
+	@Binding var selectedMenuIndex : Int
 	
-	// 학교 선택
-	@State var pickerOffset = UIScreen.main.bounds.size.height
-	let names = ["SKT", "KT", "LGT", "GT", "ET", "TT"]
-	@State var selectedNameIndex = 0
+	var body : some View{
+		
+		HStack(spacing: 0){
+			
+			// 추천
+			Button(action: {
+				self.selectedMenuIndex = 0
+			}) {
+				Image(systemName: "hand.thumbsup")
+			}.foregroundColor(self.selectedMenuIndex == 0 ? .black : .gray)
+			
+			Spacer()
+			
+			// 지도
+			Button(action: {
+				self.selectedMenuIndex = 1
+			}) {
+				Image(systemName: "map")
+			}.foregroundColor(self.selectedMenuIndex == 1 ? .black : .gray)
+			
+			Spacer()
+			
+			// 홈
+			Button(action: {
+				self.selectedMenuIndex = 2
+			}) {
+				Image(systemName: "house")
+			}.foregroundColor(self.selectedMenuIndex == 2 ? .black : .gray)
+			
+			Spacer()
+			
+			// 즐겨찾기
+			Button(action: {
+				self.selectedMenuIndex = 3
+			}) {
+				Image(systemName: "heart")
+			}.foregroundColor(self.selectedMenuIndex == 3 ? .black : .gray)
+			
+			Spacer()
+			
+			// 검색
+			NavigationLink(
+				destination: SearchView(),
+				label: {
+					Image(systemName: "magnifyingglass")
+						.foregroundColor(.gray)
+				})
+		}
+	}
+}
+
+struct UnivPickerView : View {
 	
-	// 음식 종류 선택
-	let categories: [String] = ["Korean", "Chinese", "Japanese", "Cafe", "Snack"]
-	@State var selectedCategoryIndex: Int = 0
-	
-	// 음식점 목록
-	let restaurants: [String] = ["0번 음식점", "1번 음식점", "2번 음식점", "3번 음식점", "4번 음식점", "5번 음식점"]
-	let urlList: [String] = ["http://placekitten.com/1500/1000",
-							 "http://placekitten.com/1501/1000",
-							 "http://placekitten.com/1500/1001",
-							 "http://placekitten.com/1499/1000",
-							 "http://placekitten.com/1500/999",
-							 "http://placekitten.com/1501/999"]
-	@State var selectedRestaurantID = 0
+	let univList: [String]
+	@Binding var selectedUnivIndex: Int
+	@Binding var univPickerOffset: CGFloat
+	@State var selectingUnivIndex: Int = 0
 	
 	var body: some View {
 		
-		ZStack {
+		VStack(spacing: 0) {
 			
-			// TopBar()
-			// Contents
+			//Spacer()
+			Rectangle()
+				.foregroundColor(.clear)
+				.background(Color.black.opacity(0.0001))
+				.onTapGesture(perform: {
+					withAnimation {
+						self.univPickerOffset = UIScreen.main.bounds.size.height
+					}
+				})
+			
+			VStack(spacing: 0) {
+				
+				Text("Choose A University")
+					.padding()
+				
+				Divider()
+				
+				
+				Picker(selection: self.$selectingUnivIndex, label: Text("\(self.univList[self.selectingUnivIndex])")) {
+					ForEach(0 ..< univList.count) {
+						Text(self.univList[$0])
+					}
+				}
+				
+				HStack() {
+					
+					Button(action: {
+						withAnimation {
+							self.univPickerOffset = UIScreen.main.bounds.size.height
+						}
+					}, label: {
+						Text("Cancel")
+							.padding()
+							.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+							.background(Color.gray.opacity(0.25))
+							.cornerRadius(10)
+					})
+					
+					Button(action: {
+						withAnimation {
+							self.selectedUnivIndex = self.selectingUnivIndex
+							self.univPickerOffset = UIScreen.main.bounds.size.height
+						}
+					}, label: {
+						Text("Apply")
+							.padding()
+							.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+							.foregroundColor(.white)
+							.background(Color("MainColor"))
+							.cornerRadius(10)
+						
+					})
+				}
+				.padding(.horizontal, 10)
+				.padding(.vertical)
+				
+			}
+			.foregroundColor(.black)
+			.background(Color.white.shadow(radius: 5))
+		}
+	}
+}
+///
+
+/// Main Menu
+
+// 추천 메뉴
+//
+
+// 지도 기반 메뉴
+//
+
+// 메인 메뉴
+struct HomeView : View {
+
+	let univNameList: [String]
+	@Binding var selectedUnivIndex: Int
+	@Binding var univPickerOffset: CGFloat
+	
+	// 음식 종류 선택
+	let foodCategoryList: [String] = ["All", "Korean", "Chinese", "Japanese", "Cafe", "Snack"]
+	@State var selectedFoodCategoryIndex: Int = 0
+	
+	// 음식점 목록
+	let storeList: [String] = ["Chinese Restaurant", "Gimbap Heaven", "Galbi Naengmyeon", "Handmade Dumplings", "Rice Soup", "Cup Rice"]
+	let urlList: [String] = ["https://www.mycity24.com.au/mycityko/pad_img/38635_1.jpg",
+							 "https://lh3.googleusercontent.com/proxy/kZgduVk23F6sHGeqE0VdQQfT14U70lC2EAuLRYFIx8POIqw_jqp63K3nfpWaUIrIi8CjRklqfMOY1EiNeXh2UXXpwXc7XLYvYjurO2WFZqs",
+							 "https://i.ytimg.com/vi/FfuH36TNWjE/maxresdefault.jpg",
+							 "https://i.ytimg.com/vi/QPDI36BL_2Q/maxresdefault.jpg",
+							 "https://img.insight.co.kr/static/2019/08/12/700/y8jzfe6100x3yvgq39el.jpg",
+							 "https://kofice.or.kr/dext5editordata/2016/11/20161113_08482901_38766.png"]
+	
+	@State var selectedStoreID = 0
+
+	var body: some View {
+
+		VStack(spacing: 0) {
+			
 			VStack(spacing: 0) {
 				
 				HStack(spacing: 0) {
 					
 					Button(action: {
 						withAnimation {
-							self.pickerOffset = 0
+							self.univPickerOffset = 0
 						}
 					}, label: {
-						Text("\(self.names[self.selectedNameIndex])")
+						Text("\(self.univNameList[self.selectedUnivIndex])")
 					})
-					
 				}
 				.frame(height: 45)
 				.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
@@ -69,24 +306,25 @@ struct HomeView : View {
 				.buttonStyle(PlainButtonStyle())
 				// TODO : 학교별 컬러와 글자색 변경?
 				
-				// Food Style
+				// Food Category
 				ScrollView(.horizontal, showsIndicators: false) {
 					
 					HStack(spacing: 0) {
 						
-						ForEach(0..<self.categories.count, id: \.self){ index in
+						ForEach(0..<self.foodCategoryList.count, id: \.self){ index in
 							
 							Button(action: {
-								self.selectedCategoryIndex = index
+								self.selectedFoodCategoryIndex = index
 							}) {
 								VStack(alignment: .center, spacing: 0) {
-									Text("\(self.categories[index])")
+									Text("\(self.foodCategoryList[index])")
 										.font(.system(size: 16))
-										.foregroundColor(self.selectedCategoryIndex == index ? .black : .gray)
+										.foregroundColor(self.selectedFoodCategoryIndex == index ? .black : .gray)
 										.frame(height: 40)
 									
+									// 강조 밑줄
 									CustomShape()
-										.fill(self.selectedCategoryIndex == index ? Color("MainColor") : Color.clear)
+										.fill(self.selectedFoodCategoryIndex == index ? Color("MainColor") : Color.clear)
 										.frame(width: 50, height: 2)
 								}
 							}
@@ -96,201 +334,50 @@ struct HomeView : View {
 						.buttonStyle(PlainButtonStyle())
 					}
 					.frame(minWidth: 0, maxWidth: .infinity)
+					.padding(.horizontal, 10)
 				}
-				.padding(.horizontal, 10)
+			}
+			.background(Color.white.shadow(radius: 5))
+			
+			ScrollView(.vertical) {
 				
-				Divider()
-					.padding(.bottom, 20)
+				Spacer()
+					.frame(height: 10)
 				
-				ScrollView(.vertical) {
+				ForEach(0..<self.storeList.count,id: \.self){ index in
 					
-					ForEach(0..<self.restaurants.count,id: \.self){ index in
-						
-						NavigationLink(
-							destination: RestaurantInfoView(index: index, name: self.restaurants[index]),
-							label: {
-								VStack(spacing: 0) {
-									HStack(spacing: 0) {
-										
-										WebImage(url: URL(string:self.urlList[index]), options: [.progressiveLoad, .delayPlaceholder])
-											.resizable()
-											.indicator(.progress)
-											.frame(width: 120, height: 80, alignment: .center)
-										
-										VStack(spacing: 0) {
-											Text("\(self.restaurants[index])") // 음식점 이름
-										}
-										.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+					NavigationLink(
+						destination: RestaurantInfoView(index: index, name: self.storeList[index]),
+						label: {
+							
+							VStack(spacing: 0) {
+								
+								HStack(spacing: 0) {
+									
+									WebImage(url: URL(string:self.urlList[index]), options: [.progressiveLoad, .delayPlaceholder])
+										.resizable()
+										.indicator(.progress)
+										.frame(width: 120, height: 80, alignment: .center)
+									
+									VStack(spacing: 0) {
+										Text("\(self.storeList[index])") // 음식점 이름
 									}
 									.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
 								}
 								.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
-								.background(Color.white)
-								.padding(.horizontal, 10)
-							})
-						
-						Divider()
-					}
-					.buttonStyle(PlainButtonStyle())
+							}
+							.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+							.background(Color.clear)
+							.padding(.horizontal, 10)
+						})
 					
-					
+					Divider()
 				}
-				.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
-				
-				Spacer().frame(height: 50)
+				.buttonStyle(PlainButtonStyle())
 			}
-			.foregroundColor(.black)
+			.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
 			
-			
-			
-			// Bottom Bar
-			VStack(spacing: 0) {
-				
-				Spacer()
-				
-				Divider()
-				
-				ZStack(alignment: .top){
-					
-					BottomBar(selected: self.$selected)
-						.padding()
-						.padding(.horizontal, 22)
-						.frame(height: 50)
-						.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
-						.background(Color.white)
-					
-					// QR Camera
-					Button(action: {
-						
-					}) {
-						
-						Image(systemName: "qrcode")
-							.foregroundColor(.white)
-							.padding()
-						
-					}
-					.background(Color("MainColor"))
-					.clipShape(Circle())
-					.offset(y: -15)
-					.shadow(radius: 5)
-				}
-				
-				
-			}
-			
-			// Picker
-			NamePickerView(names: self.names, selectedNameIndex: self.$selectedNameIndex, pickerOffset: self.$pickerOffset)
-			.offset(y:self.pickerOffset)
-		}
-		.foregroundColor(.black)
-		.background(Color.white)
-	}
-}
-
-struct BottomBar : View {
-	
-	@Binding var selected : Int
-	
-	var body : some View{
-		
-		HStack{
-			
-			Button(action: {
-				
-				self.selected = 0
-				
-			}) {
-				
-				Image(systemName: "hand.thumbsup")
-				
-			}.foregroundColor(self.selected == 0 ? .black : .gray)
-			
-			Spacer(minLength: 12)
-			
-			
-			Button(action: {
-				
-				self.selected = 1
-				
-			}) {
-				
-				Image(systemName: "map")
-				
-			}.foregroundColor(self.selected == 1 ? .black : .gray)
-			
-			
-			Spacer().frame(width: 120)
-			
-			Button(action: {
-				
-				self.selected = 2
-				
-			}) {
-				
-				Image(systemName: "heart")
-				
-			}.foregroundColor(self.selected == 2 ? .black : .gray)
-			
-			
-			Spacer(minLength: 12)
-			
-			Button(action: {
-				
-				self.selected = 3
-				
-			}) {
-				
-				Image(systemName: "magnifyingglass")
-				
-			}.foregroundColor(self.selected == 3 ? .black : .gray)
-		}
-	}
-}
-
-struct NamePickerView : View {
-	
-	let names: [String]
-	@Binding var selectedNameIndex: Int
-	@Binding var pickerOffset: CGFloat
-	@State var selectingNameIndex: Int = 0
-	
-	var body: some View {
-		VStack(spacing: 0) {
-			
-			//Spacer()
-			Rectangle()
-				.foregroundColor(.clear)
-				.background(Color.black.opacity(0.0001))
-				.onTapGesture(perform: {
-					withAnimation {
-						self.pickerOffset = UIScreen.main.bounds.size.height
-					}
-				})
-			
-			VStack(spacing: 0) {
-				HStack(spacing: 0) {
-					
-					Spacer()
-					
-					Button(action: {
-						withAnimation {
-							self.pickerOffset = UIScreen.main.bounds.size.height
-							self.selectedNameIndex = self.selectingNameIndex
-						}
-					}, label: {
-						Text("Confirm")
-					})
-					.padding()
-				}
-				
-				Picker(selection: self.$selectingNameIndex, label: Text("\(self.names[self.selectedNameIndex])")) {
-					ForEach(0 ..< names.count) {
-						Text(self.names[$0])
-					}
-				}
-			}
-			.foregroundColor(.black)
-			.background(Color.white.shadow(radius: 5))
+			Spacer().frame(height: 50)
 		}
 	}
 }
@@ -301,7 +388,14 @@ struct RestaurantInfoView : View {
 	
 	let name: String
 	
-	let foodList = ["짜장면 가즈아", "짬뽕은 어때", "탕수육은 필수", "울면 안대", "비싼거 시키자 팔보채"]
+	let foodList = ["Pork Soup and Rice", "Traditional Korean Sausage in Prok broth soup", "Prok intentines in a Pork broth soup", "Sliced Pork"]
+	
+	let foodImageList = ["https://img.insight.co.kr/static/2019/08/12/700/y8jzfe6100x3yvgq39el.jpg",
+						 "https://i.pinimg.com/736x/3f/5a/d1/3f5ad1178433558451bd36526af23d96.jpg",
+						 "https://cdn.ppomppu.co.kr/zboard/data3/2019/0928/m_20190928081059_rcymdlnw.jpg",
+						 "https://craftlog.com/m/i/6053542=s1280=h960"]
+	
+	let priceList = ["8,000", "8,000", "8,000", "9,000"]
 	
 	var body: some View {
 		VStack(spacing: 0) {
@@ -310,7 +404,7 @@ struct RestaurantInfoView : View {
 			ZStack {
 				
 				VStack(spacing: 0) {
-					WebImage(url: URL(string:"http://placekitten.com/750/500"), options: [.progressiveLoad, .delayPlaceholder])
+					WebImage(url: URL(string:"https://img.insight.co.kr/static/2019/08/12/700/y8jzfe6100x3yvgq39el.jpg"), options: [.progressiveLoad, .delayPlaceholder])
 						.resizable()
 						.indicator(.progress)
 						.frame(height: 200)
@@ -328,9 +422,9 @@ struct RestaurantInfoView : View {
 					VStack(spacing: 0) {
 						
 						VStack(spacing: 0) {
-							Text("음식점 이름 \(self.index)")
+							Text("Rice Soup")
 								.font(.title)
-							Text("고양이 귀엽... \(self.index)")
+							Text("Warm soup and delicious kimchi")
 								.font(.subheadline)
 						}
 						.padding()
@@ -358,7 +452,7 @@ struct RestaurantInfoView : View {
 								HStack(spacing: 0) {
 									Image(systemName: "square.and.arrow.up")
 										.padding(10)
-								Text("Share")
+									Text("Share")
 								}.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
 								.background(Color.white)
 							})
@@ -388,15 +482,21 @@ struct RestaurantInfoView : View {
 								
 								HStack(spacing: 0) {
 									
-									WebImage(url: URL(string:"http://placekitten.com/500/350"), options: [.progressiveLoad, .delayPlaceholder])
+									WebImage(url: URL(string:self.foodImageList[index]), options: [.progressiveLoad, .delayPlaceholder])
 										.resizable()
 										.indicator(.progress)
 										.frame(width: 120, height: 80, alignment: .center)
 									
 									VStack(spacing: 0) {
 										Text("\(self.foodList[index])") // 음식 이름
+											.padding(.horizontal, 10)
 									}
 									.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+									
+									VStack(spacing: 0) {
+										Text("\(self.priceList[index])")
+										Text("Won")
+									}
 								}
 								.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
 							}
@@ -428,7 +528,7 @@ struct MenuInfoView : View {
 			ZStack {
 				
 				VStack(spacing: 0) {
-					WebImage(url: URL(string:"http://placekitten.com/900/600"), options: [.progressiveLoad, .delayPlaceholder])
+					WebImage(url: URL(string:"https://img.insight.co.kr/static/2019/08/12/700/y8jzfe6100x3yvgq39el.jpg"), options: [.progressiveLoad, .delayPlaceholder])
 						.resizable()
 						.indicator(.progress)
 						.frame(height: 200)
@@ -446,10 +546,10 @@ struct MenuInfoView : View {
 					VStack(spacing: 0) {
 						
 						VStack(spacing: 0) {
-							Text("음식 이름 \(self.index)")
+							Text("Pork Soup and Rice")
 								.font(.title)
-							Text("맛난 거 많이 들어감! 아무튼 재료 많음")
-								.font(.subheadline)
+							//							Text("맛난 거 많이 들어감! 아무튼 재료 많음")
+							//								.font(.subheadline)
 						}
 						.padding()
 						
@@ -476,14 +576,14 @@ struct MenuInfoView : View {
 								HStack(spacing: 0) {
 									Image(systemName: "square.and.arrow.up")
 										.padding(10)
-								Text("Share")
+									Text("Share")
 								}.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
 								.background(Color.white)
 							})
 						}
 						.buttonStyle(PlainButtonStyle())
 					}
-					.frame(height: 120)
+					.frame(height: 100)
 					.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
 					.foregroundColor(.black)
 					.background(Color.white)
@@ -496,46 +596,53 @@ struct MenuInfoView : View {
 			.padding(.bottom, 10)
 			
 			VStack(spacing: 0) {
-				Text("가격")
+				Text("Price")
 					.font(.headline)
 					.padding()
 				
 				HStack(spacing: 0) {
 					
 					HStack(spacing: 0) {
-						Image(systemName: "dollarsign.circle")
-						Image(systemName: "dollarsign.circle")
-						Image(systemName: "dollarsign.circle")
-						Image(systemName: "dollarsign.circle")
+						WebImage(url: URL(string:"https://cdn.crowdpic.net/list-thumb/thumb_l_923F46208A61FB9CCA6B700109BD1AEA.jpg"), options: [.progressiveLoad, .delayPlaceholder])
+							.resizable()
+							.indicator(.progress)
+							.frame(width: 50, height: 25)
+						
+						Text(" x 8")
 					}.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
 					
 					HStack(spacing: 0) {
-						Text("7000원")
+						Text("8,000 Won")
 					}.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
 				}
 				.padding()
 			}
 			.padding(.horizontal, 10)
-		
+			
 			VStack(spacing: 0) {
-				Text("음식 설명")
+				Text("Food Description")
 					.font(.headline)
 					.padding()
 				
-				Text("이래저래 이래저래 뭔가 들어가서 맛있을껄? \n음식점 사장님이 아무말이나 좀 적어줬으면")
+				Text("In the soup made of pork bones and meat, cut the boiled meat and put rice in it.")
 					.font(.subheadline)
 					.padding()
 			}
 			.padding(.horizontal, 10)
 			
 			VStack(spacing: 0) {
-				Text("재료")
+				Text("Ingredient to be checked")
 					.font(.headline)
 					.padding()
 				
-				Text("대표적인 알러지 종류 해당하는 거랑 돼지고기 포함 여부 정도만 일단 적어놓으면 되겠지....")
-					.font(.subheadline)
-					.padding()
+				VStack(spacing: 10) {
+					Text("allergy-related [X]")
+						.font(.subheadline)
+					Text("Pork [O]")
+						.font(.subheadline)
+						.foregroundColor(.red)
+				}
+				.padding(.horizontal)
 			}
 			.padding(.horizontal, 10)
 			
@@ -547,10 +654,207 @@ struct MenuInfoView : View {
 		.navigationBarColor(.clear)
 	}
 }
+//
+
+// 즐겨찾기 메뉴
+//
+
+// 검색 메뉴
+struct SearchView: View {
+	
+	@State var keywordForSeaching: String = ""
+	@State var filterViewOffset: CGFloat = UIScreen.main.bounds.size.height
+	@State var currentFilterList: [Bool] = [false, false, false]
+	
+	let filterList: [String] = ["exclude Pork", "exclude Beef", "exclude Chicken"]
+	
+	var body: some View {
+		
+		ZStack {
+			
+			VStack(spacing: 0) {
+				
+				VStack(spacing: 0) {
+					
+					VStack(spacing: 0) {
+						
+						HStack(spacing: 0) {
+							
+							HStack(spacing: 0) {
+								
+								Image(systemName: "magnifyingglass")
+									.padding(.horizontal, 10)
+								
+								TextField("Input keyword for search", text: self.$keywordForSeaching, onCommit: {
+									print("\(self.keywordForSeaching)")
+								})
+								.padding(.horizontal, 10)
+								
+								if self.keywordForSeaching != "" {
+									Button(action: {
+										self.keywordForSeaching = ""
+									}, label: {
+										Image(systemName: "multiply.circle.fill")
+									})
+								}
+								
+								Button(action: {
+									withAnimation {
+										self.filterViewOffset = 0
+									}
+								}, label: {
+									Image(systemName: "slider.horizontal.3")
+										.padding(.horizontal)
+										.padding(.vertical)
+								})
+							}
+							.foregroundColor(.black)
+							.background(Color.gray.opacity(0.25))
+							.cornerRadius(10)
+							
+						}
+						.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+						.padding(.vertical, 10)
+						.padding(.horizontal, 10)
+						
+						if currentFilterList[0] || currentFilterList[1] || currentFilterList[2] {
+							
+							ScrollView(.horizontal) {
+								
+								HStack(spacing: 10) {
+									
+									ForEach(0..<self.currentFilterList.count, id: \.self) { index in
+										
+										if self.currentFilterList[index] {
+											Text("\(self.filterList[index])")
+												.font(.callout)
+												.padding(10)
+												.foregroundColor(.white)
+												.background(Color("MainColor"))
+												.cornerRadius(10)
+										}
+									}
+								}
+								.padding(.horizontal)
+							}
+							.frame(height: 40)
+							.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+							.padding(.bottom, 10)
+						}
+					}
+					.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+					.background(Color.white.shadow(radius: 5))
+					.background(Color("MainColor").edgesIgnoringSafeArea(.top))
+					
+					Spacer()
+				}
+				.navigationBarTitle(Text("Search Store and Food"), displayMode: .inline)
+				.navigationBarColor(.clear)
+			}
+			
+			FilterView(filterList: self.filterList, currentFilterList: self.$currentFilterList, filterViewOffset: self.$filterViewOffset, newFilterList: self.currentFilterList)
+				.offset(y:self.filterViewOffset)
+		}
+	}
+}
+
+struct FilterView : View {
+	
+	let filterList: [String]
+	@Binding var currentFilterList: [Bool]
+	@Binding var filterViewOffset: CGFloat
+	
+	// 현재 뷰에서만 선택된 필터 목록
+	@State var newFilterList: [Bool]
+	
+	var body: some View {
+		VStack(spacing: 0) {
+			
+			VStack(spacing: 0) {
+				
+				Text("Check filter you want")
+					.padding()
+				
+				Divider()
+				
+				ScrollView(.vertical) {
+					
+					VStack(spacing: 0) {
+						
+						VStack(spacing:0) {
+						
+							Text("Category")
+								.bold()	
+								.padding(.horizontal)
+								.padding(.vertical, 5)
+						}
+						.frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+						
+						ForEach(0..<self.filterList.count,id: \.self) { index in
+							HStack(spacing: 0) {
+								
+								Toggle(isOn: self.$newFilterList[index]) {
+									
+									Text("\(self.filterList[index])")
+									
+								}.padding()
+							}
+						}
+					}
+				}
+			}
+			.foregroundColor(.black)
+			
+			Spacer()
+			
+			HStack() {
+				
+				// 취소 버튼
+				Button(action: {
+					withAnimation {
+						self.newFilterList = self.currentFilterList
+						self.filterViewOffset = UIScreen.main.bounds.size.height
+					}
+				}, label: {
+					Text("Cancel")
+						.padding()
+						.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+						.background(Color.gray.opacity(0.25))
+						.cornerRadius(10)
+				})
+				
+				// 적용 버튼
+				Button(action: {
+					withAnimation {
+						self.filterViewOffset = UIScreen.main.bounds.size.height
+						self.currentFilterList = self.newFilterList
+					}
+				}, label: {
+					Text("Apply")
+						.padding()
+						.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+						.foregroundColor(.white)
+						.background(Color("MainColor"))
+						.cornerRadius(10)
+					
+				})
+			}
+			.padding(.horizontal, 10)
+			.padding(.vertical)
+			.buttonStyle(PlainButtonStyle())
+			
+		}
+		.background(Color.white)
+	}
+}
+//
+
+///
 
 struct ContentView_Previews: PreviewProvider {
 	static var previews: some View {
-		//ContentView()
-		MenuInfoView(index: 0)
+		ContentView()
+		//SearchView()
+		//MenuInfoView(index: 0)
 	}
 }
