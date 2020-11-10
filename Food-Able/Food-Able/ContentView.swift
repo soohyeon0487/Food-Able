@@ -347,7 +347,7 @@ struct HomeView : View {
 				ForEach(0..<self.storeList.count,id: \.self){ index in
 					
 					NavigationLink(
-						destination: RestaurantInfoView(index: index, name: self.storeList[index]),
+						destination: StoreInfoView(index: index, name: self.storeList[index]),
 						label: {
 							
 							VStack(spacing: 0) {
@@ -382,13 +382,13 @@ struct HomeView : View {
 	}
 }
 
-struct RestaurantInfoView : View {
+struct StoreInfoView : View {
 	
 	let index: Int
 	
 	let name: String
 	
-	let foodList = ["Pork Soup and Rice", "Traditional Korean Sausage in Prok broth soup", "Prok intentines in a Pork broth soup", "Sliced Pork"]
+	let foodList = ["Pork Soup and Rice", "Traditional Korean Sausage in Pork broth soup", "Pork intentines in a Pork broth soup", "Sliced Pork"]
 	
 	let foodImageList = ["https://img.insight.co.kr/static/2019/08/12/700/y8jzfe6100x3yvgq39el.jpg",
 						 "https://i.pinimg.com/736x/3f/5a/d1/3f5ad1178433558451bd36526af23d96.jpg",
@@ -400,9 +400,9 @@ struct RestaurantInfoView : View {
 	var body: some View {
 		VStack(spacing: 0) {
 			
-			// Header
 			ZStack {
 				
+				// 상단 이미지
 				VStack(spacing: 0) {
 					WebImage(url: URL(string:"https://img.insight.co.kr/static/2019/08/12/700/y8jzfe6100x3yvgq39el.jpg"), options: [.progressiveLoad, .delayPlaceholder])
 						.resizable()
@@ -422,6 +422,7 @@ struct RestaurantInfoView : View {
 					VStack(spacing: 0) {
 						
 						VStack(spacing: 0) {
+							
 							Text("Rice Soup")
 								.font(.title)
 							Text("Warm soup and delicious kimchi")
@@ -853,8 +854,8 @@ struct FilterView : View {
 
 struct ContentView_Previews: PreviewProvider {
 	static var previews: some View {
-		ContentView()
-		//SearchView()
-		//MenuInfoView(index: 0)
+		//ContentView()
+		StoreInfoView(index: 0, name: "중국집")
+			.previewDevice(PreviewDevice(rawValue: "iPhone 8"))
 	}
 }
