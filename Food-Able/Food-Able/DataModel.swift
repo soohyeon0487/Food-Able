@@ -8,7 +8,7 @@
 import MapKit
 import Foundation
 
-class University {
+class University : Identifiable {
 	var id: Int
 	var name: [String] // [ kor, eng, etc ... ]
 	var address: [String] // [ kor, eng, etc ... ]
@@ -29,15 +29,17 @@ class University {
 	}
 }
 
-class Store {
+class Store : Identifiable {
 	var id: Int
+	var category: Int
 	var name: [String] // [ kor, eng, etc ... ]
 	var address: [String] // [ kor, eng, etc ... ]
 	var region: MKCoordinateRegion
 	var likes: Int
 	
-	init(id: Int, name: [String], address: [String], location: (latitude: Float, longitude: Float), likes: Int) {
+	init(id: Int, category: Int, name: [String], address: [String], location: (latitude: Float, longitude: Float), likes: Int) {
 		self.id = id
+		self.category = category
 		self.name = name
 		self.address = address
 		self.region = MKCoordinateRegion(center:
@@ -52,7 +54,7 @@ class Store {
 	}
 }
 
-class Food {
+class Food : Identifiable {
 	var id: Int
 	var name: [String] // [ kor, eng, etc ... ]
 	var description: String
@@ -66,4 +68,31 @@ class Food {
 		self.price = price
 		self.likes = likes
 	}
+}
+
+func prepareDataForUniversity() -> [University] {
+	print("prepare Fake Data for University Class")
+	
+	var newList = [University]()
+	
+	newList.append(University(id: 0, name: ["1대"], address: [""], location: (0, 0)))
+	newList.append(University(id: 1, name: ["2대"], address: [""], location: (0, 0)))
+	newList.append(University(id: 2, name: ["3대"], address: [""], location: (0, 0)))
+	newList.append(University(id: 3, name: ["4대"], address: [""], location: (0, 0)))
+	
+	return newList
+}
+
+
+func prepareDataForStore() -> [Store] {
+	print("prepare Fake Data for Store Class")
+	
+	var newList = [Store]()
+	
+	newList.append(Store(id: 0, category: 1, name: ["집밥"], address: [""], location: (0, 0), likes: 0))
+	newList.append(Store(id: 1, category: 2, name: ["콩밥"], address: [""], location: (0, 0), likes: 0))
+	newList.append(Store(id: 2, category: 3, name: ["약밥"], address: [""], location: (0, 0), likes: 0))
+	newList.append(Store(id: 3, category: 1, name: ["쌀밥"], address: [""], location: (0, 0), likes: 0))
+	
+	return newList
 }

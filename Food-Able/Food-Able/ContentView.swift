@@ -9,21 +9,29 @@ import SwiftUI
 import CodeScanner
 import SDWebImageSwiftUI
 
+
+
 /// 최상위 뷰
 struct ContentView: View {
 	
 	// 현재 화면 메뉴 번호
-	@State var selectedMenuIndex: Int = 2
+	@State var selectedMenuIndex: Int = 0
+	
+	// 기본 언어
+	@State var langIndex: Int = 0
 	
 	// 학교 선택
-	let univList = ["Konkuk Univ.", "Chung-Ang Univ.", "Kyung Hee Univ."]
+	let univList = prepareDataForUniversity()
 	@State var selectedUnivIndex = 0
 	@State var univPickerOffset: CGFloat = UIScreen.main.bounds.size.height
 	
 	// QR 코드 관련 변수
 	@State var isShowingScanner: Bool = false
-	@State var isShowingWebView: Bool = false
+	//@State var isShowingWebView: Bool = false
 	@State var dataFromQRCode: String = ""
+	
+	@Environment(\.openURL) var openURL
+
 	
 	var body: some View {
 		NavigationView {
@@ -35,7 +43,7 @@ struct ContentView: View {
 				Text("\(self.selectedMenuIndex)")
 					.opacity(self.selectedMenuIndex == 1 ? 1 : 0)
 				
-				HomeView(univNameList: self.univList, selectedUnivIndex: self.$selectedUnivIndex, univPickerOffset: self.$univPickerOffset)
+				HomeView(langIndex: self.$langIndex, univNameList: self.univList, selectedUnivIndex: self.$selectedUnivIndex, univPickerOffset: self.$univPickerOffset)
 					.foregroundColor(.black)
 					.opacity(self.selectedMenuIndex == 2 ? 1 : 0)
 				
@@ -62,39 +70,28 @@ struct ContentView: View {
 							
 							Spacer()
 							
-							NavigationLink(
-								destination:
-									// 현재는 웹뷰 -> 차후 앱 내 링크로 연결
-									MyWebview(urlToLoad: self.dataFromQRCode)
-									.edgesIgnoringSafeArea(.all)
-									.navigationBarTitle(self.dataFromQRCode, displayMode: .inline)
-								,
-								isActive: self.$isShowingWebView,
-								label: {
-									Button(action: {
-										self.isShowingScanner = true
-									}, label: {
-										Image(systemName: "qrcode")
-											.font(.title)
-											.foregroundColor(.white)
-											.padding(10)
-									})
-									.background(Color("MainColor"))
-									.clipShape(Circle())
-									.shadow(radius: 5)
-									.sheet(isPresented: self.$isShowingScanner) {
-										CodeScannerView(codeTypes: [.qr], simulatedData: "https://www.naver.com", completion: self.handleScan)
-									}
-								})
-									.padding()
-									.padding(.bottom, 50)
+							Button(action: {
+								self.isShowingScanner = true
+							}, label: {
+								Image(systemName: "qrcode")
+									.font(.title)
+									.foregroundColor(.white)
+									.padding(10)
+							})
+							.background(Color("MainColor"))
+							.clipShape(Circle())
+							.shadow(radius: 5)
+							.padding()
+							.padding(.bottom, 50)
+							.sheet(isPresented: self.$isShowingScanner) {
+								CodeScannerView(codeTypes: [.qr], simulatedData: "foodable://store", completion: self.handleScan)
+							}
 						}
-						
 					}
 				}
 				
 				// 대학 고르기
-				UnivPickerView(univList: self.univList, selectedUnivIndex: self.$selectedUnivIndex, univPickerOffset: self.$univPickerOffset)
+				UnivPickerView(langIndex: self.$langIndex, univList: self.univList, selectedUnivIndex: self.$selectedUnivIndex, univPickerOffset: self.$univPickerOffset)
 					.offset(y:self.univPickerOffset)
 			}
 			.foregroundColor(.black)
@@ -102,10 +99,17 @@ struct ContentView: View {
 			.navigationBarTitle("", displayMode: .inline)
 			.navigationBarHidden(true)
 		}
+		.onOpenURL(perform: { url in
+			
+			guard let viewID = url.viewIdentifier else { return }
+			
+			self.selectedMenuIndex = viewID.rawValue
+		})
 	}
 	
 	// QR 코드 관련 이벤트 처리
 	func handleScan(result: Result<String, CodeScannerView.ScanError>) {
+		
 		self.isShowingScanner = false
 		
 		switch result {
@@ -113,7 +117,8 @@ struct ContentView: View {
 			print("Scanning success")
 			print("\(code)")
 			self.dataFromQRCode = code
-			self.isShowingWebView = true
+			
+			openURL(URL(string: self.dataFromQRCode)!)
 			
 		case .failure(let error):
 			print("Scanning failure")
@@ -179,7 +184,11 @@ struct BottomBar : View {
 
 struct UnivPickerView : View {
 	
-	let univList: [String]
+	// 언어 설정값
+	@Binding var langIndex: Int
+	
+	// 대학 목록
+	let univList: [University]
 	@Binding var selectedUnivIndex: Int
 	@Binding var univPickerOffset: CGFloat
 	@State var selectingUnivIndex: Int = 0
@@ -206,47 +215,47 @@ struct UnivPickerView : View {
 				Divider()
 				
 				
-				Picker(selection: self.$selectingUnivIndex, label: Text("\(self.univList[self.selectingUnivIndex])")) {
-					ForEach(0 ..< univList.count) {
-						Text(self.univList[$0])
+				Picker(selection: self.$selectingUnivIndex, label: Text("\(self.univList[self.selectingUnivIndex].name[0])")) {
+					
+					ForEach(self.univList) { univ in
+						Text("\(univ.name[0])")
 					}
-				}
-				
-				HStack() {
 					
-					Button(action: {
-						withAnimation {
-							self.univPickerOffset = UIScreen.main.bounds.size.height
-						}
-					}, label: {
-						Text("Cancel")
-							.padding()
-							.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
-							.background(Color.gray.opacity(0.25))
-							.cornerRadius(10)
-					})
 					
-					Button(action: {
-						withAnimation {
-							self.selectedUnivIndex = self.selectingUnivIndex
-							self.univPickerOffset = UIScreen.main.bounds.size.height
-						}
-					}, label: {
-						Text("Apply")
-							.padding()
-							.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
-							.foregroundColor(.white)
-							.background(Color("MainColor"))
-							.cornerRadius(10)
+					HStack() {
 						
-					})
+						Button(action: {
+							withAnimation {
+								self.univPickerOffset = UIScreen.main.bounds.size.height
+							}
+						}, label: {
+							Text("Cancel")
+								.padding()
+								.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+								.background(Color.gray.opacity(0.25))
+								.cornerRadius(10)
+						})
+						
+						Button(action: {
+							withAnimation {
+								self.selectedUnivIndex = self.selectingUnivIndex
+								self.univPickerOffset = UIScreen.main.bounds.size.height
+							}
+						}, label: {
+							Text("Apply")
+								.padding()
+								.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+								.foregroundColor(.white)
+								.background(Color("MainColor"))
+								.cornerRadius(10)
+						})
+					}
+					.padding(.horizontal, 10)
+					.padding(.vertical)
 				}
-				.padding(.horizontal, 10)
-				.padding(.vertical)
-				
+				.foregroundColor(.black)
+				.background(Color.white.shadow(radius: 5))
 			}
-			.foregroundColor(.black)
-			.background(Color.white.shadow(radius: 5))
 		}
 	}
 }
@@ -262,17 +271,26 @@ struct UnivPickerView : View {
 
 // 메인 메뉴
 struct HomeView : View {
-
-	let univNameList: [String]
+	
+	// 언어 설정값
+	@Binding var langIndex: Int
+	
+	// 대학 목록
+	let univNameList: [University]
 	@Binding var selectedUnivIndex: Int
 	@Binding var univPickerOffset: CGFloat
 	
-	// 음식 종류 선택
+	// 음식점 분류
 	let foodCategoryList: [String] = ["All", "Korean", "Chinese", "Japanese", "Cafe", "Snack"]
 	@State var selectedFoodCategoryIndex: Int = 0
 	
 	// 음식점 목록
-	let storeList: [String] = ["Chinese Restaurant", "Gimbap Heaven", "Galbi Naengmyeon", "Handmade Dumplings", "Rice Soup", "Cup Rice"]
+	let storeList = prepareDataForStore()
+	@State var currentStoreList = prepareDataForStore()
+	@State var selectedStoreID = 0
+	@State var activeStoreID: Int?
+	
+	// 임시 음식점 사진
 	let urlList: [String] = ["https://www.mycity24.com.au/mycityko/pad_img/38635_1.jpg",
 							 "https://lh3.googleusercontent.com/proxy/kZgduVk23F6sHGeqE0VdQQfT14U70lC2EAuLRYFIx8POIqw_jqp63K3nfpWaUIrIi8CjRklqfMOY1EiNeXh2UXXpwXc7XLYvYjurO2WFZqs",
 							 "https://i.ytimg.com/vi/FfuH36TNWjE/maxresdefault.jpg",
@@ -280,14 +298,13 @@ struct HomeView : View {
 							 "https://img.insight.co.kr/static/2019/08/12/700/y8jzfe6100x3yvgq39el.jpg",
 							 "https://kofice.or.kr/dext5editordata/2016/11/20161113_08482901_38766.png"]
 	
-	@State var selectedStoreID = 0
-
 	var body: some View {
-
+		
 		VStack(spacing: 0) {
 			
 			VStack(spacing: 0) {
 				
+				// 대학 이름
 				HStack(spacing: 0) {
 					
 					Button(action: {
@@ -295,7 +312,7 @@ struct HomeView : View {
 							self.univPickerOffset = 0
 						}
 					}, label: {
-						Text("\(self.univNameList[self.selectedUnivIndex])")
+						Text("\(self.univNameList[self.selectedUnivIndex].name[0])")
 					})
 				}
 				.frame(height: 45)
@@ -304,9 +321,8 @@ struct HomeView : View {
 				.foregroundColor(.white)
 				.background(Color("MainColor").edgesIgnoringSafeArea(.top))
 				.buttonStyle(PlainButtonStyle())
-				// TODO : 학교별 컬러와 글자색 변경?
 				
-				// Food Category
+				// 음식점 분류 -- TODO : 카테고리 값에 따른 노출
 				ScrollView(.horizontal, showsIndicators: false) {
 					
 					HStack(spacing: 0) {
@@ -314,7 +330,18 @@ struct HomeView : View {
 						ForEach(0..<self.foodCategoryList.count, id: \.self){ index in
 							
 							Button(action: {
-								self.selectedFoodCategoryIndex = index
+								withAnimation {
+									self.selectedFoodCategoryIndex = index
+									
+									// 전체 메뉴
+									if index == 0 {
+										self.currentStoreList = self.storeList
+									}
+									// 분류 조건
+									else {
+										self.currentStoreList = self.storeList.filter { $0.category == index }
+									}
+								}
 							}) {
 								VStack(alignment: .center, spacing: 0) {
 									Text("\(self.foodCategoryList[index])")
@@ -344,23 +371,24 @@ struct HomeView : View {
 				Spacer()
 					.frame(height: 10)
 				
-				ForEach(0..<self.storeList.count,id: \.self){ index in
-					
+				ForEach(self.currentStoreList) { store in
+
 					NavigationLink(
-						destination: StoreInfoView(index: index, name: self.storeList[index]),
+						destination: StoreInfoView(langIndex: self.$langIndex,store: store),
+						tag: store.id,
+						selection: $activeStoreID,
 						label: {
-							
 							VStack(spacing: 0) {
 								
 								HStack(spacing: 0) {
 									
-									WebImage(url: URL(string:self.urlList[index]), options: [.progressiveLoad, .delayPlaceholder])
+									WebImage(url: URL(string:self.urlList[store.id]), options: [.progressiveLoad, .delayPlaceholder])
 										.resizable()
 										.indicator(.progress)
 										.frame(width: 120, height: 80, alignment: .center)
 									
 									VStack(spacing: 0) {
-										Text("\(self.storeList[index])") // 음식점 이름
+										Text("\(store.name[0])") // 음식점 이름
 									}
 									.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
 								}
@@ -370,31 +398,52 @@ struct HomeView : View {
 							.background(Color.clear)
 							.padding(.horizontal, 10)
 						})
-					
+
 					Divider()
-				}
-				.buttonStyle(PlainButtonStyle())
+				}.buttonStyle(PlainButtonStyle())
 			}
 			.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
 			
 			Spacer().frame(height: 50)
 		}
+		.onOpenURL(perform: { url in
+			
+			guard let viewID = url.viewIdentifier else { return }
+			
+			let pageID = url.pageIdentifier
+			
+			if viewID == .store {
+				
+				if 0 <= pageID && pageID < self.storeList.count {
+					
+					self.activeStoreID = pageID
+					
+				}
+			}
+			
+			return
+		})
 	}
 }
 
 struct StoreInfoView : View {
 	
-	let index: Int
+	// 언어 설정값
+	@Binding var langIndex: Int
 	
-	let name: String
+	// 음식점 정보
+	let store: Store
 	
+	// 음식 목록
 	let foodList = ["Pork Soup and Rice", "Traditional Korean Sausage in Pork broth soup", "Pork intentines in a Pork broth soup", "Sliced Pork"]
 	
+	// 임시 음식 이미지
 	let foodImageList = ["https://img.insight.co.kr/static/2019/08/12/700/y8jzfe6100x3yvgq39el.jpg",
 						 "https://i.pinimg.com/736x/3f/5a/d1/3f5ad1178433558451bd36526af23d96.jpg",
 						 "https://cdn.ppomppu.co.kr/zboard/data3/2019/0928/m_20190928081059_rcymdlnw.jpg",
 						 "https://craftlog.com/m/i/6053542=s1280=h960"]
 	
+	// 임시 음식 가격
 	let priceList = ["8,000", "8,000", "8,000", "9,000"]
 	
 	var body: some View {
@@ -423,7 +472,7 @@ struct StoreInfoView : View {
 						
 						VStack(spacing: 0) {
 							
-							Text("Rice Soup")
+							Text("\(self.store.name[0])")
 								.font(.title)
 							Text("Warm soup and delicious kimchi")
 								.font(.subheadline)
@@ -440,7 +489,7 @@ struct StoreInfoView : View {
 								HStack(spacing: 0) {
 									Image(systemName: "heart")
 										.padding(10)
-									Text("Like")
+									Text("Like \(self.store.likes)")
 								}.frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
 								.background(Color.white)
 							})
@@ -783,7 +832,7 @@ struct FilterView : View {
 					VStack(spacing: 0) {
 						
 						VStack(spacing:0) {
-						
+							
 							Text("Category")
 								.bold()	
 								.padding(.horizontal)
@@ -854,8 +903,74 @@ struct FilterView : View {
 
 struct ContentView_Previews: PreviewProvider {
 	static var previews: some View {
-		//ContentView()
-		StoreInfoView(index: 0, name: "중국집")
+		ContentView()
 			.previewDevice(PreviewDevice(rawValue: "iPhone 8"))
+	}
+}
+
+
+enum ViewIdentifier: Int {
+	case recommand
+	case map
+	case store
+	case favorites
+}
+
+extension URL {
+	
+	// URL 양식
+	// foodable://store/1
+	// [scheme]://[host]/etc
+	
+	// foodable://store -> pathComponents.count = 0
+	// foodable://store/ -> pathComponents.count = 1
+	// foodable://store/111 -> pathComponents.count = 2
+	// foodable://store/111/ -> pathComponents.count = 3
+	
+	// foodable://store[/][111][/] -> pathComponents.count = 3
+	
+	// 딥링크 적합 여부
+	var isDeepLink: Bool {
+		
+		return scheme == "foodable"
+	}
+	
+	// url과 View 연동
+	var viewIdentifier: ViewIdentifier? {
+		guard isDeepLink else { return nil }
+		
+		
+		switch host {
+		
+		case "recommand":
+			return .recommand
+		
+		case "map":
+			return .map
+		
+		case "store":
+			return .store
+		
+		case "favorites":
+			return .favorites
+		
+		default:
+			return nil
+		}
+	}
+	
+	var pageIdentifier: Int  {
+		
+		guard let viewID = viewIdentifier else { return -1 }
+		
+		// 상세 주소가 있으면
+		if pathComponents.count > 1 {
+			
+			let id = pathComponents[1]
+			
+			return Int(id)!
+		}
+		
+		return -1
 	}
 }
