@@ -6,6 +6,8 @@ target 'Food-Able' do
   use_frameworks!
 
   pod 'SDWebImageSwiftUI'
+  pod 'SwiftyJSON'
+  pod 'Alamofire'
 
   # Pods for Food-Able
 

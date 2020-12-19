@@ -11,7 +11,9 @@ import SwiftUI
 struct Food_AbleApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+			ContentView()
+				.environmentObject(UnivList())
+				.environmentObject(StoreList())
         }
     }
 }
