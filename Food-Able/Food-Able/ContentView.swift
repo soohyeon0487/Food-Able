@@ -24,7 +24,7 @@ struct ContentView: View {
     @State var univPickerOffset: CGFloat = UIScreen.main.bounds.size.height
     
     // 현재 화면 메뉴 번호
-    @State var selectedMenuIndex: Int = 1
+    @State var selectedMenuIndex: Int = 2
     
     // MapView
     @State var currentRegion: MKCoordinateRegion = MKCoordinateRegion()
@@ -36,7 +36,7 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             
-            if !self.univList.isComplete {
+            if !self.univList.isComplete && !self.storeList.isComplete {
                 Spacer()
             } else {
                 
@@ -87,25 +87,29 @@ struct ContentView: View {
                                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
                             
                             // QR Camera
-                            HStack {
-                                
-                                Spacer()
-                                
-                                Button(action: {
-                                    self.isShowingScanner = true
-                                }, label: {
-                                    Image(systemName: "qrcode")
-                                        .font(.title)
-                                        .foregroundColor(.white)
-                                        .padding(10)
-                                })
-                                .background(Color("MainColor"))
-                                .clipShape(Circle())
-                                .shadow(radius: 5)
-                                .padding()
-                                .padding(.bottom, 50)
-                                .sheet(isPresented: self.$isShowingScanner) {
-                                    CodeScannerView(codeTypes: [.qr], simulatedData: "foodable://store", completion: self.handleScan)
+                            
+                            if self.selectedMenuIndex == 2 {
+                            
+                                HStack {
+                                    
+                                    Spacer()
+                                    
+                                    Button(action: {
+                                        self.isShowingScanner = true
+                                    }, label: {
+                                        Image(systemName: "qrcode")
+                                            .font(.title)
+                                            .foregroundColor(.white)
+                                            .padding(10)
+                                    })
+                                    .background(Color("MainColor"))
+                                    .clipShape(Circle())
+                                    .shadow(radius: 5)
+                                    .padding()
+                                    .padding(.bottom, 50)
+                                    .sheet(isPresented: self.$isShowingScanner) {
+                                        CodeScannerView(codeTypes: [.qr], simulatedData: "foodable://store", completion: self.handleScan)
+                                    }
                                 }
                             }
                         }
@@ -118,6 +122,14 @@ struct ContentView: View {
                 .background(Color.white)
                 .navigationBarTitle("", displayMode: .inline)
                 .navigationBarHidden(true)
+                .onAppear(perform: {
+                    self.univList.selectedUnivIndex = UserDefaults.standard.integer(forKey: "selectedUnivIndex")
+                    
+                    self.storeList.selectedFoodCategoryIndex = 0
+                    self.storeList.filteringStoreList(univ: self.univList.selectedUnivIndex)
+                
+                    self.currentRegion = self.univList.list[self.univList.selectedUnivIndex].region
+                })
             }
         }
         .onOpenURL(perform: { url in
@@ -265,6 +277,9 @@ struct UnivPickerView : View {
                     })
                     
                     Button(action: {
+                        //self.userSettings.selectedUnivIndex = self.selectingUnivIndex
+                        UserDefaults.standard.setValue(self.selectingUnivIndex, forKey: "selectedUnivIndex")
+                        
                         self.univList.selectedUnivIndex = self.selectingUnivIndex
                         
                         self.storeList.selectedFoodCategoryIndex = 0
@@ -306,7 +321,9 @@ struct UnivPickerView : View {
 ///
 
 struct ContentView_Previews: PreviewProvider {
+    
     static var previews: some View {
+        
         ContentView()
             .environmentObject(UnivList())
             .environmentObject(StoreList())

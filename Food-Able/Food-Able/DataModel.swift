@@ -37,9 +37,11 @@ class University : Identifiable {
 
 class UnivList: ObservableObject {
     
-    @Published var list: [University] = []
+    let sqlite = SQLiteManager.shared
+    
     @Published var selectedUnivIndex: Int
     @Published var isComplete: Bool
+    @Published var list: [University] = []
     
     init() {
         self.selectedUnivIndex = 0
@@ -49,24 +51,55 @@ class UnivList: ObservableObject {
     
     func loadDataForServer() {
         
-        
-        AF.request("http://localhost:3000/universities", method: .get).responseData { res in
+        // 대학 목록 데이터 버전 체크
+        AF.request("http://192.168.0.109:3000/universities/version", method: .get).responseData { res in
             switch res.result {
             case .success:
                 if let data = res.data {
-                    let data = JSON(data).array!
                     
-                    data.forEach {
-                        let id: Int = $0["university_id"].intValue
-                        let name: String = $0["university_name"].stringValue
-                        let address: String = $0["university_address"].stringValue
-                        let latitude: Double = $0["university_latitude"].doubleValue
-                        let longitude: Double = $0["university_longitude"].doubleValue
+                    let newVersion = JSON(data).array![0]["VERSION"].stringValue
+                    
+                    if newVersion == UserDefaults.standard.string(forKey: "univDataVersion") {
                         
-                        self.list.append(University(id: id, name: name, address: address, location: (latitude, longitude, 0.025)))
+                        self.list = self.sqlite.readUnivData()
+                        
+                        print("loadDataForServer() : SQLite.readUnivData() - Universities")
+                        
+                        self.isComplete = true
+                        
+                    } else {
+                        
+                        // 대학 목록 조회
+                        AF.request("http://192.168.0.109:3000/universities", method: .get).responseData { res in
+                            switch res.result {
+                            case .success:
+                                if let data = res.data {
+                                    let data = JSON(data).array!
+                                    
+                                    data.forEach {
+                                        
+                                        self.sqlite.insertUnivData(data: $0)
+                                        
+                                        let id: Int = $0["university_id"].intValue
+                                        let name: String = $0["university_name"].stringValue
+                                        let address: String = $0["university_address"].stringValue
+                                        let latitude: Double = $0["university_latitude"].doubleValue
+                                        let longitude: Double = $0["university_longitude"].doubleValue
+
+                                        self.list.append(University(id: id, name: name, address: address, location: (latitude, longitude, 0.025)))
+                                    }
+                                    
+                                    UserDefaults.standard.setValue(newVersion, forKey: "univDataVersion")
+                                    
+                                    print("loadDataForServer() : SQLite.insertUnivData() - Universities")
+                                    
+                                    self.isComplete = true
+                                }
+                            case .failure(_):
+                                print("requset error")
+                            }
+                        }
                     }
-                    
-                    self.isComplete = true
                 }
             case .failure(_):
                 print("requset error")
@@ -85,20 +118,20 @@ class Store : Identifiable {
     var name: [String] // [ kor, eng, etc ... ]
     var address: [String] // [ kor, eng, etc ... ]
     var description: [String]
-    var phone_number: String
-    var image_path: String
+    var phoneNumber: String
+    var imagePath: String
     var region: MKCoordinateRegion
     var likes: Int
     var univIndex: Int
     
-    init(id: Int, category: Int, name: String, address: String, description: String, phone_number: String, image_path: String, location: (latitude: Float, longitude: Float, delta: Float), likes: Int, univIndex: Int) {
+    init(id: Int, category: Int, name: String, address: String, description: String, phoneNumber: String, imagePath: String, location: (latitude: Double, longitude: Double, delta: Float), likes: Int, univIndex: Int) {
         self.id = id
         self.category = category
         self.name = name.split(separator: ";").map { String($0) }
         self.address = address.split(separator: ";").map { String($0) }
         self.description = description.split(separator: ";").map { String($0) }
-        self.phone_number = phone_number
-        self.image_path = image_path
+        self.phoneNumber = phoneNumber
+        self.imagePath = imagePath
         self.region = MKCoordinateRegion(center:
                                             CLLocationCoordinate2D(
                                                 latitude: CLLocationDegrees(location.latitude),
@@ -116,28 +149,89 @@ class Store : Identifiable {
 
 class StoreList: ObservableObject {
     
+    let sqlite = SQLiteManager.shared
+    
+    @Published var selectedFoodCategoryIndex: Int
+    @Published var isComplete: Bool
     @Published var list: [Store] = []
     @Published var currentList: [Store] = []
     
-    @Published var selectedFoodCategoryIndex: Int = 0
-    
     init() {
-        self.list = prepareDataForStore()
-        self.currentList = self.list
+        self.selectedFoodCategoryIndex = 0
+        self.isComplete = false
+        loadDataForServer()
     }
     
-    func prepareDataForStore() -> [Store] {
-        print("prepare Fake Data for Store Class")
+    func loadDataForServer() {
         
-        var newList = [Store]()
-        
-        newList.append(Store(id: 0, category: 1, name: "국밥1;Soup and Rice1", address: "", description: "", phone_number: "02-0000-0000", image_path: "store_iamge_none", location: (37.545, 127.076, 0.1), likes: 0, univIndex: 1))
-        newList.append(Store(id: 1, category: 1, name: "국밥2;Soup and Rice2", address: "", description: "", phone_number: "02-0000-0000", image_path: "store_iamge_none", location: (37.556, 127.377, 0.1), likes: 0, univIndex: 1))
-        newList.append(Store(id: 2, category: 2, name: "국밥3;Soup and Rice3", address: "", description: "", phone_number: "02-0000-0000", image_path: "store_iamge_none", location: (37.527, 127.178, 0.1), likes: 0, univIndex: 1))
-        newList.append(Store(id: 3, category: 2, name: "국밥4;Soup and Rice4", address: "", description: "", phone_number: "02-0000-0000", image_path: "store_iamge_none", location: (37.448, 127.279, 0.1), likes: 0, univIndex: 1))
-        
-        return newList
+        // 가게 목록 데이터 버전 체크
+        AF.request("http://192.168.0.109:3000/stores/version", method: .get).responseData { res in
+            switch res.result {
+            case .success:
+                if let data = res.data {
+                    
+                    let newVersion = JSON(data).array![0]["VERSION"].stringValue
+                    
+                    if newVersion == UserDefaults.standard.string(forKey: "storeDataVersion") {
+                        
+                        self.list = self.sqlite.readStoreData()
+                        self.currentList = self.list
+                        
+                        print("loadDataForServer() : SQLite.readStoreData() - Stores")
+                        print("self.list", self.list)
+                        print("self.currentList", self.currentList)
+                        
+                        self.isComplete = true
+                        
+                    } else {
+                        
+                        // 가게 목록 조회
+                        AF.request("http://192.168.0.109:3000/stores", method: .get).responseData { res in
+                            switch res.result {
+                            case .success:
+                                if let data = res.data {
+                                    let data = JSON(data).array!
+                                    
+                                    data.forEach {
+                                        
+                                        self.sqlite.insertStoreData(data: $0)
+                                        
+                                        let id: Int = $0["store_id"].intValue
+                                        let category: Int = $0["store_category"].intValue
+                                        let name: String = $0["store_name"].stringValue
+                                        let address: String = $0["store_address"].stringValue
+                                        let description: String = $0["store_description"].stringValue
+                                        let phoneNumber: String = $0["store_phoneNumber"].stringValue
+                                        let imagePath: String = $0["store_imagePath"].stringValue
+                                        let latitude: Double = $0["store_latitude"].doubleValue
+                                        let longitude: Double = $0["store_longitude"].doubleValue
+                                        let likes: Int = $0["store_likes"].intValue
+                                        let univIndex: Int = $0["store_university_id"].intValue
+
+                                        self.list.append(Store(id: id, category: category, name: name, address: address, description: description, phoneNumber: phoneNumber, imagePath: imagePath, location: (latitude: latitude, longitude: longitude, delta: 0.01), likes: likes, univIndex: univIndex))
+                                        
+                                    }
+                                    
+                                    self.currentList = self.list
+                                    
+                                    UserDefaults.standard.setValue(newVersion, forKey: "storeDataVersion")
+                                    
+                                    print("loadDataForServer() : SQLite.insertStoreData() - Stores")
+                                    
+                                    self.isComplete = true
+                                }
+                            case .failure(_):
+                                print("requset error")
+                            }
+                        }
+                    }
+                }
+            case .failure(_):
+                print("requset error")
+            }
+        }
     }
+    
     
     func filteringStoreList(univ: Int) {
         switch (univ: univ, category: self.selectedFoodCategoryIndex) {
@@ -149,11 +243,11 @@ class StoreList: ObservableObject {
             }
         case (_, 0):
             self.currentList = self.list.filter {
-                $0.id == univ
+                $0.univIndex == univ
             }
         default:
             self.currentList = self.list.filter {
-                ($0.id == univ) && ($0.category == self.selectedFoodCategoryIndex)
+                ($0.univIndex == univ) && ($0.category == self.selectedFoodCategoryIndex)
             }
         }
     }

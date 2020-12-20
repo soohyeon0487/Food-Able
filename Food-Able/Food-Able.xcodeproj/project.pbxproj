@@ -19,6 +19,8 @@
 		91A099A8258CC2DC001F7FAC /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A099A7258CC2DC001F7FAC /* SearchView.swift */; };
 		91A099AB258CC33C001F7FAC /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A099AA258CC33C001F7FAC /* MapView.swift */; };
 		91A099AF258CCE1A001F7FAC /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A099AE258CCE1A001F7FAC /* HomeView.swift */; };
+		91C16C5A258F072F0096C03B /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 91C16C59258F072F0096C03B /* libsqlite3.tbd */; };
+		91C16C5D258F66A70096C03B /* SQLiteManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91C16C5C258F66A70096C03B /* SQLiteManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +39,8 @@
 		91A099A7258CC2DC001F7FAC /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		91A099AA258CC33C001F7FAC /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
 		91A099AE258CCE1A001F7FAC /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		91C16C59258F072F0096C03B /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		91C16C5C258F66A70096C03B /* SQLiteManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,6 +48,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				91C16C5A258F072F0096C03B /* libsqlite3.tbd in Frameworks */,
 				0A3B063825597953004D1070 /* CodeScanner in Frameworks */,
 				58B9AF25DAC283904A3B006D /* Pods_Food_Able.framework in Frameworks */,
 			);
@@ -84,6 +89,7 @@
 				0A7F34482553CAE700DAF917 /* Assets.xcassets */,
 				0A7F344D2553CAE700DAF917 /* Info.plist */,
 				0A7F344A2553CAE700DAF917 /* Preview Content */,
+				91C16C5C258F66A70096C03B /* SQLiteManager.swift */,
 			);
 			path = "Food-Able";
 			sourceTree = "<group>";
@@ -108,6 +114,7 @@
 		ADB78974A4A5BB4EDD92FE47 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				91C16C59258F072F0096C03B /* libsqlite3.tbd */,
 				845B9EABF92AA896D4084978 /* Pods_Food_Able.framework */,
 			);
 			name = Frameworks;
@@ -238,6 +245,7 @@
 				0A3B063B25597C39004D1070 /* WebView.swift in Sources */,
 				0A7F34452553CAE600DAF917 /* Food_AbleApp.swift in Sources */,
 				91A099AF258CCE1A001F7FAC /* HomeView.swift in Sources */,
+				91C16C5D258F66A70096C03B /* SQLiteManager.swift in Sources */,
 				91A099A8258CC2DC001F7FAC /* SearchView.swift in Sources */,
 				0A7F34552553E7AD00DAF917 /* CommonView.swift in Sources */,
 			);

@@ -18,7 +18,7 @@ struct HomeView : View {
     @Binding var currentRegion: MKCoordinateRegion
     
     // 음식점 분류
-    let foodCategoryList: [String] = ["전체", "한식", "중식", "일식", "카페", "간식"]
+    let foodCategoryList: [String] = ["전체", "한식", "중식", "양식", "일식", "기타"]
     
     // 음식점 목록
     @State var selectedStoreID = 0
@@ -109,7 +109,8 @@ struct HomeView : View {
                                 
                                 HStack(spacing: 0) {
                                     
-                                    WebImage(url: URL(string:self.urlList[store.id]), options: [.progressiveLoad, .delayPlaceholder])
+                                    //WebImage(url: URL(string:self.urlList[store.id]), options: [.progressiveLoad, .delayPlaceholder])
+                                    WebImage(url: URL(string:"http://placekitten.com/120/80"), options: [.progressiveLoad, .delayPlaceholder])
                                         .resizable()
                                         .indicator(.progress)
                                         .frame(width: 120, height: 80, alignment: .center)

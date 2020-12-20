@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct Food_AbleApp: App {
     var body: some Scene {
+        
         WindowGroup {
 			ContentView()
 				.environmentObject(UnivList())
